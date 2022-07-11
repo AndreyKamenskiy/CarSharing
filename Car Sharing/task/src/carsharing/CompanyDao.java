@@ -7,8 +7,6 @@ public interface CompanyDao {
     // https://www.tutorialspoint.com/design_pattern/data_access_object_pattern.htm
 
     List<Company> getAllCompanies();
-    Company getCompany(int  id);
-    Company getCompany(String name);
-    boolean addCompany(Company company);
+    boolean addCompany(String name);
 
 }
