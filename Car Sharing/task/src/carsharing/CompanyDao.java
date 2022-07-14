@@ -8,5 +8,4 @@ public interface CompanyDao {
 
     List<Company> getAllCompanies();
     boolean addCompany(String name);
-
 }

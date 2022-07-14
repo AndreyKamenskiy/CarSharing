@@ -3,30 +3,24 @@ package carsharing;
 import java.sql.*;
 import java.util.List;
 import java.util.Scanner;
-import java.util.stream.Stream;
 
 //todo: add logging
+//todo: make callback menu
 
 public class Main {
-    static final String JDBC_DRIVER = "org.h2.Driver";
-    static final String DB_URL = "jdbc:h2:./src/carsharing/db/";
+    private static final String JDBC_DRIVER = "org.h2.Driver";
+    private static final String DB_URL = "jdbc:h2:./src/carsharing/db/";
 
-    static final String[] mainMenu = {
-            "1. Log in as a manager",
-            "0. Exit",
-    };
-
-    static final String[] companyMenu = {
-            "1. Company list",
-            "2. Create a company",
-            "0. Back",
-    };
+    private static CompanyDao companyDao;
+    private static CarDao carDao;
 
     public static void main(String[] args) {
         try (Connection conn = getConnection(DB_URL + getDBName(args))) {
             createCompanyTable(conn);
-            CompanyDao companyDao = new CompanyDaoH2(conn);
-            runMainMenu(companyDao);
+            createCarTable(conn);
+            companyDao = new CompanyDaoH2(conn);
+            carDao = new CarDaoH2(conn);
+            runMainMenu();
         } catch (SQLException se) {
             //Handle errors for JDBC
             se.printStackTrace();
@@ -38,10 +32,10 @@ public class Main {
 
     private static void createCompanyTable(Connection conn) {
         try (Statement stmt = conn.createStatement()) {
-            String sql = "CREATE TABLE IF NOT EXISTS COMPANY (\n" +
-                         "    ID INT PRIMARY KEY AUTO_INCREMENT,\n" +
-                         "    NAME VARCHAR UNIQUE NOT NULL\n" +
-                         ")\n";
+            String sql = "CREATE TABLE IF NOT EXISTS company (\n" +
+                    "    id INT PRIMARY KEY AUTO_INCREMENT,\n" +
+                    "    name VARCHAR UNIQUE NOT NULL\n" +
+                    ")\n";
             stmt.executeUpdate(sql);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -49,33 +43,57 @@ public class Main {
         }
     }
 
-    private static int getChoice(final String[] menu) {
+    private static void createCarTable(Connection conn) {
+        try (Statement stmt = conn.createStatement()) {
+            String sql = "CREATE TABLE IF NOT EXISTS car (\n" +
+                    "    id INT PRIMARY KEY AUTO_INCREMENT,\n" +
+                    "    name VARCHAR UNIQUE NOT NULL,\n" +
+                    "    company_id INT NOT NULL,\n" +
+                    "    FOREIGN KEY (company_id) REFERENCES company(id)" +
+                    ")\n";
+            stmt.executeUpdate(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static int getChoice(String menu, int minValueInc, int maxValueExc) {
         int choice;
         Scanner in = new Scanner(System.in);
         do {
-            Stream.of(menu).forEach(System.out::println);
+            System.out.println(menu);
             try {
-                choice = in.nextInt();
+                choice = Integer.parseInt(in.nextLine());
                 System.out.println();
             } catch (Exception e) {
                 e.printStackTrace();
+                System.out.println();
                 choice = -1;
             }
-        } while (choice < 0 || choice >= menu.length);
+        } while (choice < minValueInc || choice >= maxValueExc);
         return choice;
     }
 
-    private static void runMainMenu(CompanyDao companyDao) {
-        while (getChoice(mainMenu) == 1) {
+
+    private static void runMainMenu() {
+        final String mainMenu =
+                "1. Log in as a manager\n" +
+                        "0. Exit";
+        final String companyMenu =
+                "1. Company list\n" +
+                        "2. Create a company\n" +
+                        "0. Back";
+        while (getChoice(mainMenu, 0, 2) == 1) {
             int choice;
             do {
-                choice = getChoice(companyMenu);
+                choice = getChoice(companyMenu, 0, 3);
                 if (choice == 1) {
-                    showAllCompany(companyDao.getAllCompanies());
+                    runChooseCompanyMenu(companyDao.getAllCompanies());
                     continue;
                 }
                 if (choice == 2) {
-                    if (companyDao.addCompany(getCompanyName())) {
+                    if (companyDao.addCompany(getName("Enter the company name:"))) {
                         System.out.println("The company was created!\n");
                     } else {
                         System.out.println("Something went wrong!\n");
@@ -85,32 +103,71 @@ public class Main {
         }
     }
 
-    private static String getCompanyName() {
+    private static String getName(String title) {
         Scanner in = new Scanner(System.in);
         String name;
-        do {
-            System.out.println("Enter the company name:");
-            try {
-                name = in.nextLine();
-                System.out.println();
-                break;
-            } catch (Exception e) {
-                e.printStackTrace();
-                name = null;
-            }
-        } while (name == null);
+        System.out.println(title);
+        name = in.nextLine();
+        System.out.println();
         return name;
     }
 
-    private static void showAllCompany(List<Company> companies) {
+    private static void runChooseCompanyMenu(List<Company> companies) {
+
         if (companies.size() > 0) {
-            System.out.println("Company list:");
+            StringBuilder menu = new StringBuilder();
+            menu.append("Choose the company:\n");
             int i = 1;
             for (Company c : companies) {
-                System.out.printf("%d. %s%n", i++, c.getName());
+                menu.append(String.format("%d. %s%n", i++, c.getName()));
             }
+            menu.append("0. Back");
+            int companyIndex = getChoice(menu.toString(), 0, companies.size() + 1);
+            if (companyIndex == 0) {
+                return;
+            }
+            runCompanyMenu(companies.get(companyIndex - 1));
         } else {
             System.out.println("The company list is empty!");
+            System.out.println();
+        }
+    }
+
+    private static void runCompanyMenu(Company company) {
+        final String menu = String.format(
+                "'%s' company\n" +
+                        "1. Car list\n" +
+                        "2. Create a car\n" +
+                        "0. Back", company.getName()
+        );
+        int choice;
+        do {
+            choice = getChoice(menu, 0, 3);
+            if (choice == 1) {
+                showCompanyCars(carDao.getCompanyCars(company));
+                continue;
+            }
+            if (choice == 2) {
+                if (carDao.addCar(company, getName("Enter the car name:"))) {
+                    System.out.println("The car was added!\n");
+                } else {
+                    System.out.println("Something went wrong!\n");
+                }
+            }
+        } while (choice != 0);
+    }
+
+    private static void showCompanyCars(List<Car> cars) {
+        if (cars.size() > 0) {
+            StringBuilder carsToPrint = new StringBuilder();
+            carsToPrint.append("Car list:\n");
+            int i = 1;
+            for (Car c : cars) {
+                carsToPrint.append(String.format("%d. %s%n", i++, c.getName()));
+            }
+            System.out.println(carsToPrint);
+        } else {
+            System.out.println("The car list is empty!");
         }
         System.out.println();
     }

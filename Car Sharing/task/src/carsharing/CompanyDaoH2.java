@@ -35,7 +35,7 @@ public class CompanyDaoH2 implements CompanyDao {
 
     @Override
     public boolean addCompany(String name) {
-        String insert = "INSERT INTO COMPANY (NAME) VALUES (?)";
+        String insert = "INSERT INTO company (NAME) VALUES (?)";
         try (PreparedStatement preparedStatement = connectionH2.prepareStatement(insert)) {
             preparedStatement.setString(1, name);
             preparedStatement.executeUpdate();
