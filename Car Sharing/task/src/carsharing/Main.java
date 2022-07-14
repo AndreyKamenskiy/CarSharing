@@ -58,7 +58,7 @@ public class Main {
         }
     }
 
-    private static int getChoice(String menu, int minValueInc, int maxValueExc) {
+    private static int getChoice(String menu, int maxValue) {
         int choice;
         Scanner in = new Scanner(System.in);
         do {
@@ -71,7 +71,7 @@ public class Main {
                 System.out.println();
                 choice = -1;
             }
-        } while (choice < minValueInc || choice >= maxValueExc);
+        } while (choice < 0 || choice > maxValue);
         return choice;
     }
 
@@ -84,10 +84,10 @@ public class Main {
                 "1. Company list\n" +
                         "2. Create a company\n" +
                         "0. Back";
-        while (getChoice(mainMenu, 0, 2) == 1) {
+        while (getChoice(mainMenu, 1) == 1) {
             int choice;
             do {
-                choice = getChoice(companyMenu, 0, 3);
+                choice = getChoice(companyMenu,2);
                 if (choice == 1) {
                     runChooseCompanyMenu(companyDao.getAllCompanies());
                     continue;
@@ -122,7 +122,7 @@ public class Main {
                 menu.append(String.format("%d. %s%n", i++, c.getName()));
             }
             menu.append("0. Back");
-            int companyIndex = getChoice(menu.toString(), 0, companies.size() + 1);
+            int companyIndex = getChoice(menu.toString(), companies.size());
             if (companyIndex == 0) {
                 return;
             }
@@ -142,7 +142,7 @@ public class Main {
         );
         int choice;
         do {
-            choice = getChoice(menu, 0, 3);
+            choice = getChoice(menu, 2);
             if (choice == 1) {
                 showCompanyCars(carDao.getCompanyCars(company));
                 continue;
