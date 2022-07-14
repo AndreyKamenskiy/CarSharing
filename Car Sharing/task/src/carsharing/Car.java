@@ -1,9 +1,9 @@
 package carsharing;
 
 public class Car {
-    private int id;
-    private String name;
-    private int companyId;
+    private final int id;
+    private final String name;
+    private final int companyId;
 
 
     public Car(int id, String name, int companyId) {
