@@ -13,13 +13,16 @@ public class Main {
 
     private static CompanyDao companyDao;
     private static CarDao carDao;
+    private static CustomerDao customerDao;
 
     public static void main(String[] args) {
         try (Connection conn = getConnection(DB_URL + getDBName(args))) {
             createCompanyTable(conn);
             createCarTable(conn);
+            createCustomerTable(conn);
             companyDao = new CompanyDaoH2(conn);
             carDao = new CarDaoH2(conn);
+            customerDao = new CustomerDaoH2(conn);
             runMainMenu();
         } catch (SQLException se) {
             //Handle errors for JDBC
@@ -35,7 +38,7 @@ public class Main {
             String sql = "CREATE TABLE IF NOT EXISTS company (\n" +
                     "    id INT PRIMARY KEY AUTO_INCREMENT,\n" +
                     "    name VARCHAR UNIQUE NOT NULL\n" +
-                    ")\n";
+                    ");\n";
             stmt.executeUpdate(sql);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -57,6 +60,23 @@ public class Main {
             throw new RuntimeException(e);
         }
     }
+
+    private static void createCustomerTable(Connection conn) {
+        try (Statement stmt = conn.createStatement()) {
+            String sql = "CREATE TABLE IF NOT EXISTS customer (\n" +
+                    "    id INT PRIMARY KEY AUTO_INCREMENT,\n" +
+                    "    name VARCHAR UNIQUE NOT NULL,\n" +
+                    "    rented_car_id INT ,\n" +
+                    "    FOREIGN KEY (rented_car_id) REFERENCES car(id)" +
+                    ")\n";
+            stmt.executeUpdate(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
+
 
     private static int getChoice(String menu, int maxValue) {
         int choice;
@@ -187,7 +207,6 @@ public class Main {
     private static Connection getConnection(String url) throws SQLException, ClassNotFoundException {
         // STEP 1: Register JDBC driver
         Class.forName(JDBC_DRIVER);
-        //DriverManager.drivers().forEach(d -> System.out.println(d.toString()));
         //STEP 2: Open a connection
         Connection conn = DriverManager.getConnection(url);
         conn.setAutoCommit(true);

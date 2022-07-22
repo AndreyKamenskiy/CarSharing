@@ -46,4 +46,26 @@ public class CompanyDaoH2 implements CompanyDao {
         return true;
     }
 
+    @Override
+    public List<Car> getAvailableCars(Company company) {
+        List<Car> cars = new ArrayList<>();
+        String getAvailableCarsForCompany = "SELECT car.id, car.name \n" +
+                "FROM car \n" +
+                "LEFT OUTER JOIN customer ON rented_car_id = car.id\n" +
+                "WHERE rented_car_id is null and company_id = ?;";
+        try (PreparedStatement preparedStatement = connectionH2.prepareStatement(getAvailableCarsForCompany)) {
+            preparedStatement.setInt(1, company.getId());
+            try (ResultSet allCars = preparedStatement.executeQuery()) {
+                while (allCars.next()) {
+                    int id = allCars.getInt("ID");
+                    String name = allCars.getString("NAME");
+                    cars.add(new Car(id, name, company.getId()));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return cars;
+    }
+
 }
