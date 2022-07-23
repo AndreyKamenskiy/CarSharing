@@ -6,6 +6,8 @@ import java.util.Scanner;
 
 public class Menu implements Callbackable {
 
+    private boolean isSingleRun = false;
+
     static class MenuItem implements Callbackable{
         private String title;
         private Callbackable action;
@@ -65,6 +67,9 @@ public class Menu implements Callbackable {
                 break;
             }
             items.get(choice - 1).callback();
+            if (isSingleRun) {
+                break;
+            }
         }
     }
 
@@ -98,6 +103,9 @@ public class Menu implements Callbackable {
         return choice;
     }
 
+    public void singleRun() {
+        isSingleRun = true;
+    }
 
 
 }
