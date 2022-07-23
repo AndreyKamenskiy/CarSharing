@@ -1,11 +1,12 @@
 package carsharing;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 public class Menu implements Callbackable {
 
-    class MenuItem implements Callbackable{
+    static class MenuItem implements Callbackable{
         private String title;
         private Callbackable action;
 
@@ -24,7 +25,7 @@ public class Menu implements Callbackable {
         }
     }
 
-    private final String tittle;
+    private String tittle;
     private List<MenuItem> items;
 
     private String exitItem = "Exit";
@@ -34,6 +35,11 @@ public class Menu implements Callbackable {
         this.items = items;
     }
 
+    public Menu() {
+        tittle = "";
+        items = new ArrayList<>();
+    }
+
     public Menu addItem(MenuItem item) {
         this.items.add(item);
         return this;
@@ -41,6 +47,11 @@ public class Menu implements Callbackable {
 
     public Menu setExitItem(String exitItem) {
         this.exitItem = exitItem;
+        return this;
+    }
+
+    public Menu setTitle(String tittle) {
+        this.tittle = tittle;
         return this;
     }
 
@@ -59,7 +70,9 @@ public class Menu implements Callbackable {
 
     private String makeMenuString() {
         StringBuilder menu = new StringBuilder();
-        menu.append(String.format("%s:%n", tittle));
+        if (tittle != null && tittle.length() > 0) {
+            menu.append(String.format("%s%n", tittle));
+        }
         int i = 1;
         for (MenuItem item : items) {
             menu.append(String.format("%d. %s%n", i++, item.getTitle()));
@@ -72,7 +85,7 @@ public class Menu implements Callbackable {
         int choice;
         Scanner in = new Scanner(System.in);
         do {
-            System.out.println(menu);
+            System.out.print(menu);
             try {
                 choice = Integer.parseInt(in.nextLine());
                 System.out.println();
@@ -84,5 +97,7 @@ public class Menu implements Callbackable {
         } while (choice < 0 || choice > maxValue);
         return choice;
     }
+
+
 
 }
