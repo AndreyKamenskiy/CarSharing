@@ -5,12 +5,6 @@ public class Customer {
     private final String name;
     private int rentedCarId; // 0 equals null, mean that no rented car now for customer.
 
-    public Customer(int id, String name) {
-        this.name = name;
-        this.id = id;
-        this.rentedCarId = 0;
-    }
-
     public Customer(int id, String name, int rentedCarId) {
         this.name = name;
         this.id = id;
@@ -33,4 +27,8 @@ public class Customer {
         this.rentedCarId = rentedCarId;
     }
 
+    @Override
+    public String toString() {
+        return name;
+    }
 }

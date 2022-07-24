@@ -6,7 +6,7 @@ import java.util.List;
 
 public class CustomerDaoH2 implements CustomerDao {
 
-    private Connection connectionH2;
+    private final Connection connectionH2;
 
     public CustomerDaoH2(Connection connectionH2) {
         this.connectionH2 = connectionH2;

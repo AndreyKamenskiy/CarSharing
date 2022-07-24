@@ -49,4 +49,24 @@ public class CarDaoH2 implements CarDao{
         }
         return true;
     }
+
+    @Override
+    public Car getCarById(int id) {
+        String insert = "SELECT name, company_id FROM car WHERE id = ?";
+        Car car = null;
+        try (PreparedStatement preparedStatement = connectionH2.prepareStatement(insert)) {
+            preparedStatement.setInt(1, id);
+            preparedStatement.executeQuery();
+            try (ResultSet cars = preparedStatement.executeQuery()) {
+                while (cars.next()) {
+                    String name = cars.getString("name");
+                    int companyId = cars.getInt("company_id");
+                    car = new Car(id, name, companyId);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return car;
+    }
 }

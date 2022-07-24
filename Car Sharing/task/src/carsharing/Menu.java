@@ -9,8 +9,8 @@ public class Menu implements Callbackable {
     private boolean isSingleRun = false;
 
     static class MenuItem implements Callbackable{
-        private String title;
-        private Callbackable action;
+        private final String title;
+        private final Callbackable action;
 
         public MenuItem(String title, Callbackable action) {
             this.title = title;
@@ -28,14 +28,9 @@ public class Menu implements Callbackable {
     }
 
     private String tittle;
-    private List<MenuItem> items;
+    private final List<MenuItem> items;
 
     private String exitItem = "Exit";
-
-    public Menu(String tittle, List<MenuItem> items) {
-        this.tittle = tittle;
-        this.items = items;
-    }
 
     public Menu() {
         tittle = "";
@@ -60,7 +55,7 @@ public class Menu implements Callbackable {
     @Override
     public void callback() {
         String menuString = makeMenuString();
-        int choice = 0;
+        int choice;
         while (true){
             choice = getChoice(menuString,items.size());
             if (choice == 0) {
@@ -103,8 +98,9 @@ public class Menu implements Callbackable {
         return choice;
     }
 
-    public void singleRun() {
+    public Menu singleRun() {
         isSingleRun = true;
+        return this;
     }
 
 

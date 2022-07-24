@@ -1,10 +1,6 @@
 package carsharing;
 
 public class Company {
-
-    // to avoid null
-    public static Company emptyCompany = new Company(-1, "");
-
     private String name;
     private int id;
 
@@ -29,4 +25,8 @@ public class Company {
         this.id = id;
     }
 
+    @Override
+    public String toString() {
+        return name;
+    }
 }

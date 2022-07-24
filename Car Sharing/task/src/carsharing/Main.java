@@ -23,7 +23,13 @@ public class Main {
             companyDao = new CompanyDaoH2(conn);
             carDao = new CarDaoH2(conn);
             customerDao = new CustomerDaoH2(conn);
-            runMainMenu();
+
+            new Menu().addItem(new Menu.MenuItem("Log in as a manager", loginAsManager))
+                    .addItem(new Menu.MenuItem("Log in as a customer", loginAsCustomer))
+                    .addItem(new Menu.MenuItem("Create a customer", createNewCustomer))
+                    .callback();
+
+            //runMainMenu();
         } catch (SQLException se) {
             //Handle errors for JDBC
             se.printStackTrace();
@@ -76,53 +82,6 @@ public class Main {
         }
     }
 
-
-
-    private static int getChoice(String menu, int maxValue) {
-        int choice;
-        Scanner in = new Scanner(System.in);
-        do {
-            System.out.println(menu);
-            try {
-                choice = Integer.parseInt(in.nextLine());
-                System.out.println();
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.out.println();
-                choice = -1;
-            }
-        } while (choice < 0 || choice > maxValue);
-        return choice;
-    }
-
-
-    private static void runMainMenu() {
-        final String mainMenu =
-                "1. Log in as a manager\n" +
-                        "0. Exit";
-        final String companyMenu =
-                "1. Company list\n" +
-                        "2. Create a company\n" +
-                        "0. Back";
-        while (getChoice(mainMenu, 1) == 1) {
-            int choice;
-            do {
-                choice = getChoice(companyMenu,2);
-                if (choice == 1) {
-                    runChooseCompanyMenu(companyDao.getAllCompanies());
-                    continue;
-                }
-                if (choice == 2) {
-                    if (companyDao.addCompany(getName("Enter the company name:"))) {
-                        System.out.println("The company was created!\n");
-                    } else {
-                        System.out.println("Something went wrong!\n");
-                    }
-                }
-            } while (choice != 0);
-        }
-    }
-
     private static String getName(String title) {
         Scanner in = new Scanner(System.in);
         String name;
@@ -130,51 +89,6 @@ public class Main {
         name = in.nextLine();
         System.out.println();
         return name;
-    }
-
-    private static void runChooseCompanyMenu(List<Company> companies) {
-
-        if (companies.size() > 0) {
-            StringBuilder menu = new StringBuilder();
-            menu.append("Choose the company:\n");
-            int i = 1;
-            for (Company c : companies) {
-                menu.append(String.format("%d. %s%n", i++, c.getName()));
-            }
-            menu.append("0. Back");
-            int companyIndex = getChoice(menu.toString(), companies.size());
-            if (companyIndex == 0) {
-                return;
-            }
-            runCompanyMenu(companies.get(companyIndex - 1));
-        } else {
-            System.out.println("The company list is empty!");
-            System.out.println();
-        }
-    }
-
-    private static void runCompanyMenu(Company company) {
-        final String menu = String.format(
-                "'%s' company\n" +
-                        "1. Car list\n" +
-                        "2. Create a car\n" +
-                        "0. Back", company.getName()
-        );
-        int choice;
-        do {
-            choice = getChoice(menu, 2);
-            if (choice == 1) {
-                showCompanyCars(carDao.getCompanyCars(company));
-                continue;
-            }
-            if (choice == 2) {
-                if (carDao.addCar(company, getName("Enter the car name:"))) {
-                    System.out.println("The car was added!\n");
-                } else {
-                    System.out.println("Something went wrong!\n");
-                }
-            }
-        } while (choice != 0);
     }
 
     private static void showCompanyCars(List<Car> cars) {
@@ -185,12 +99,176 @@ public class Main {
             for (Car c : cars) {
                 carsToPrint.append(String.format("%d. %s%n", i++, c.getName()));
             }
-            System.out.println(carsToPrint);
+            System.out.print(carsToPrint);
         } else {
             System.out.println("The car list is empty!");
         }
         System.out.println();
     }
+
+    private static void addNewCar(Company company) {
+        if (carDao.addCar(company, getName("Enter the car name:"))) {
+            System.out.println("The car was added!\n");
+        } else {
+            System.out.println("Something went wrong!\n");
+        }
+    }
+
+    private static class CompanyMenu extends Menu {
+        CompanyMenu(Company company) {
+            super();
+            setTitle(String.format("'%s' company", company.getName()));
+            setExitItem("Back");
+            addItem(new MenuItem("Car list", () -> showCompanyCars(carDao.getCompanyCars(company))));
+            addItem(new MenuItem("Create a car", () -> addNewCar(company)));
+        }
+    }
+
+    private static final Callbackable companyListMenu = () -> {
+        List<Company> companies = companyDao.getAllCompanies();
+        if (companies.size() > 0) {
+            Choice<Company> choice = new Choice<>();
+            new SelectMenu<>(companies, choice)
+                    .setTitle("Choose a company:")
+                    .setExitItem("Back")
+                    .callback();
+            if (choice.hasChoice()) {
+                new CompanyMenu(choice.getChoice()).callback();
+            }
+        } else {
+            System.out.println("The company list is empty!\n");
+        }
+    };
+
+    private static final Callbackable createNewCompany = () -> {
+        if (companyDao.addCompany(getName("Enter the company name:"))) {
+            System.out.println("The company was created!\n");
+        } else {
+            System.out.println("Something went wrong!\n");
+        }
+    };
+    private static final Callbackable loginAsManager = () -> new Menu()
+            .addItem(new Menu.MenuItem("Company list", companyListMenu))
+            .addItem(new Menu.MenuItem("Create a company", createNewCompany))
+            .setExitItem("Back")
+            .callback();
+
+    private static class Choice<T> {
+        private T choice = null;
+
+        public void setChoice(T choice) {
+            this.choice = choice;
+        }
+
+        public T getChoice() {
+            return choice;
+        }
+
+        public boolean hasChoice() {
+            return choice != null;
+        }
+    }
+
+    private static class SelectMenu<T> extends Menu {
+        SelectMenu(List<T> items, Choice<T> choice) {
+            super();
+            singleRun();
+            for (T currentItem : items) {
+                addItem(new MenuItem(currentItem.toString(), () -> choice.setChoice(currentItem)));
+            }
+        }
+    }
+
+    private static class CustomerMenu extends Menu {
+        private Customer customer;
+
+        private final Callbackable rentACar = () -> {
+            if (customerDao.isRented(customer)) {
+                System.out.print("You've already rented a car!\n\n");
+                return;
+            }
+            List<Company> companies = companyDao.getAllCompanies();
+            if (companies.size() > 0) {
+                Choice<Company> companyChoice = new Choice<>();
+                new SelectMenu<>(companies, companyChoice)
+                        .setTitle("Choose a company:")
+                        .setExitItem("Back")
+                        .callback();
+                if (companyChoice.hasChoice()) {
+                    Company company = companyChoice.getChoice();
+                    List<Car> availableCar = companyDao.getAvailableCars(company);
+                    if (availableCar.size() == 0) {
+                        System.out.printf("No available cars in the '%s' company%n%n", company.getName());
+                        return;
+                    }
+                    Choice<Car> carChoice = new Choice<>();
+                    new SelectMenu<>(availableCar, carChoice)
+                            .setTitle("Choose a car:")
+                            .setExitItem("Back")
+                            .callback();
+                    if (carChoice.hasChoice()) {
+                        customerDao.rentACar(customer, carChoice.getChoice());
+                        // customer.setRentedCarId(carChoice.getChoice().getId());
+                        System.out.printf("You rented '%s'%n%n", carChoice.getChoice().getName());
+                    }
+                }
+            } else {
+                System.out.println("The company list is empty!\n");
+            }
+        };
+
+        private final Callbackable returnCar = () -> {
+            if (!customerDao.isRented(customer)) {
+                System.out.print("You didn't rent a car!\n\n");
+                return;
+            }
+            customerDao.returnCar(customer);
+            System.out.println("You've returned a rented car!\n");
+        };
+
+        private final Callbackable showRentedCar = () -> {
+            if (!customerDao.isRented(customer)) {
+                System.out.print("You didn't rent a car!\n\n");
+                return;
+            }
+            Car car = carDao.getCarById(customerDao.getRentedCar(customer));
+            String carName = car.getName();
+            String companyName = companyDao.getCompanyById(car.getCompanyId()).getName();
+            System.out.printf("Your rented car:%n%s%nCompany:%n%s%n%n", carName, companyName);
+        };
+
+        CustomerMenu(Customer customer) {
+            super();
+            this.customer = customer;
+            setExitItem("Back");
+            addItem(new MenuItem("Rent a car", rentACar));
+            addItem(new MenuItem("Return a rented car", returnCar));
+            addItem(new MenuItem("My rented car", showRentedCar));
+        }
+
+    }
+
+    private static final Callbackable loginAsCustomer = () -> {
+        List<Customer> allCustomers = customerDao.getAllCustomers();
+        if (allCustomers.size() > 0) {
+            Menu menu = new Menu().setTitle("Customer list:").setExitItem("Back");
+            // todo: change to Select menu
+            for (Customer currentCustomer : allCustomers) {
+                menu.addItem(new Menu.MenuItem(currentCustomer.getName(), new CustomerMenu(currentCustomer)));
+            }
+            menu.singleRun().callback();
+        } else {
+            System.out.println("The customer list is empty!");
+        }
+    };
+
+    private static final Callbackable createNewCustomer = () -> {
+        if (customerDao.addCustomer(getName("Enter the customer name:"))) {
+            System.out.println("The customer was added!\n");
+        } else {
+            System.out.println("Something went wrong!\n");
+        }
+    };
 
     private static String getDBName(String[] args) {
         final String keyRegEx = "\\s*-databaseFileName\\s*";

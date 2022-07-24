@@ -9,5 +9,5 @@ public interface CompanyDao {
     List<Company> getAllCompanies();
     boolean addCompany(String name);
     List<Car> getAvailableCars(Company company);
-
+    Company getCompanyById(int id);
 }

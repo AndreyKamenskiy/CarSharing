@@ -23,4 +23,9 @@ public class Car {
     public int getCompanyId() {
         return companyId;
     }
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }

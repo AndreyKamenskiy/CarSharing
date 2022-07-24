@@ -68,4 +68,22 @@ public class CompanyDaoH2 implements CompanyDao {
         return cars;
     }
 
+    @Override
+    public Company getCompanyById(int id) {
+        String insert = "SELECT name FROM company WHERE id = ?";
+        Company company = null;
+        try (PreparedStatement preparedStatement = connectionH2.prepareStatement(insert)) {
+            preparedStatement.setInt(1, id);
+            preparedStatement.executeQuery();
+            try (ResultSet companies = preparedStatement.executeQuery()) {
+                while (companies.next()) {
+                    String name = companies.getString("name");
+                    company = new Company(id, name);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return company;
+    }
 }
